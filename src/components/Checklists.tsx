@@ -18,6 +18,7 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
   const [selectedMachineId, setSelectedMachineId] = useState<string>('');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
+  const [completedDate, setCompletedDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -87,7 +88,7 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
         machine_type: machine.type,
         frequency,
         operator_email: currentUser,
-        completed_date: new Date().toISOString().split('T')[0],
+        completed_date: completedDate,
         completed_items: completedIndices,
         total_items: items.length,
         notes,
@@ -217,13 +218,21 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
         )}
       </div>
 
-      {/* Notes */}
+      {/* Date & Notes */}
       {selectedMachine && (
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes (optional)</label>
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any additional notes about this maintenance..."
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+        <div className="flex items-start gap-4 flex-wrap">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Completion Date</label>
+            <input type="date" value={completedDate} onChange={(e) => setCompletedDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes (optional)</label>
+            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any additional notes about this maintenance..."
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+          </div>
         </div>
       )}
 
