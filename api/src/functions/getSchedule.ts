@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit } from '@azure/functions';
 import { getPool } from '../db';
+import sql from 'mssql';
 
 app.http('getSchedule', {
   methods: ['GET'],
@@ -9,22 +10,25 @@ app.http('getSchedule', {
     try {
       const filter = req.query.get('filter') || 'all';
       const pool = await getPool();
+      const request = pool.request();
 
-      let query = 'SELECT * FROM dbo.cnc_maintenance_schedule';
       const today = new Date().toISOString().split('T')[0];
+      let query = 'SELECT * FROM dbo.cnc_maintenance_schedule';
 
       if (filter === 'overdue') {
-        query += ` WHERE completed = 0 AND scheduled_date < '${today}'`;
+        request.input('today', sql.Date, today);
+        query += ' WHERE completed = 0 AND scheduled_date < @today';
       } else if (filter === 'upcoming') {
         const weekOut = new Date();
         weekOut.setDate(weekOut.getDate() + 7);
-        const weekOutStr = weekOut.toISOString().split('T')[0];
-        query += ` WHERE completed = 0 AND scheduled_date >= '${today}' AND scheduled_date <= '${weekOutStr}'`;
+        request.input('today', sql.Date, today);
+        request.input('weekOut', sql.Date, weekOut.toISOString().split('T')[0]);
+        query += ' WHERE completed = 0 AND scheduled_date >= @today AND scheduled_date <= @weekOut';
       }
 
       query += ' ORDER BY scheduled_date ASC';
 
-      const result = await pool.request().query(query);
+      const result = await request.query(query);
       return { jsonBody: result.recordset };
     } catch (err: any) {
       return { status: 500, body: err.message };

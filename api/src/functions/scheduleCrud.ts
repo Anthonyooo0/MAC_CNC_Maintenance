@@ -52,7 +52,7 @@ app.http('createSchedule', {
 app.http('updateSchedule', {
   methods: ['PUT'],
   authLevel: 'anonymous',
-  route: 'schedule/{id}',
+  route: 'schedule/{id:int}',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);
@@ -114,7 +114,7 @@ app.http('updateSchedule', {
 app.http('deleteSchedule', {
   methods: ['DELETE'],
   authLevel: 'anonymous',
-  route: 'schedule/{id}',
+  route: 'schedule/{id:int}',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);

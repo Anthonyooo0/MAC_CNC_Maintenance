@@ -82,21 +82,24 @@ app.http('reportByMachine', {
         .input('endDate', sql.Date, endDate)
         .query(`
           SELECT
-            machine_id, machine_name, machine_type,
+            r.machine_id, r.machine_name, r.machine_type,
             COUNT(*) AS record_count,
-            SUM(total_items) AS total_tasks,
-            SUM((SELECT COUNT(*) FROM OPENJSON(completed_items))) AS completed_tasks,
+            SUM(r.total_items) AS total_tasks,
+            SUM(j.completed_count) AS completed_tasks,
             CASE
-              WHEN SUM(total_items) > 0
+              WHEN SUM(r.total_items) > 0
               THEN ROUND(
-                CAST(SUM((SELECT COUNT(*) FROM OPENJSON(completed_items))) AS FLOAT)
-                / SUM(total_items) * 100, 1
+                CAST(SUM(j.completed_count) AS FLOAT)
+                / SUM(r.total_items) * 100, 1
               )
               ELSE 0
             END AS completion_rate
-          FROM dbo.cnc_maintenance_records
-          WHERE completed_date >= @startDate AND completed_date <= @endDate
-          GROUP BY machine_id, machine_name, machine_type
+          FROM dbo.cnc_maintenance_records r
+          CROSS APPLY (
+            SELECT COUNT(*) AS completed_count FROM OPENJSON(r.completed_items)
+          ) j
+          WHERE r.completed_date >= @startDate AND r.completed_date <= @endDate
+          GROUP BY r.machine_id, r.machine_name, r.machine_type
           ORDER BY completion_rate DESC
         `);
 
@@ -125,21 +128,24 @@ app.http('reportByOperator', {
         .input('endDate', sql.Date, endDate)
         .query(`
           SELECT
-            operator_email,
+            r.operator_email,
             COUNT(*) AS record_count,
-            SUM(total_items) AS total_tasks,
-            SUM((SELECT COUNT(*) FROM OPENJSON(completed_items))) AS completed_tasks,
+            SUM(r.total_items) AS total_tasks,
+            SUM(j.completed_count) AS completed_tasks,
             CASE
-              WHEN SUM(total_items) > 0
+              WHEN SUM(r.total_items) > 0
               THEN ROUND(
-                CAST(SUM((SELECT COUNT(*) FROM OPENJSON(completed_items))) AS FLOAT)
-                / SUM(total_items) * 100, 1
+                CAST(SUM(j.completed_count) AS FLOAT)
+                / SUM(r.total_items) * 100, 1
               )
               ELSE 0
             END AS completion_rate
-          FROM dbo.cnc_maintenance_records
-          WHERE completed_date >= @startDate AND completed_date <= @endDate
-          GROUP BY operator_email
+          FROM dbo.cnc_maintenance_records r
+          CROSS APPLY (
+            SELECT COUNT(*) AS completed_count FROM OPENJSON(r.completed_items)
+          ) j
+          WHERE r.completed_date >= @startDate AND r.completed_date <= @endDate
+          GROUP BY r.operator_email
           ORDER BY completion_rate DESC
         `);
 

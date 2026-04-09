@@ -11,23 +11,24 @@ app.http('getMachineStats', {
 
       const result = await pool.request().query(`
         SELECT
-          machine_id,
-          machine_name,
-          machine_type,
+          r.machine_id,
+          r.machine_name,
+          r.machine_type,
           COUNT(*) AS record_count,
-          MAX(completed_date) AS last_maintenance,
+          MAX(r.completed_date) AS last_maintenance,
           AVG(
             CASE
-              WHEN total_items > 0
-              THEN CAST(
-                (SELECT COUNT(*) FROM OPENJSON(completed_items)) AS FLOAT
-              ) / total_items * 100
+              WHEN r.total_items > 0
+              THEN CAST(j.completed_count AS FLOAT) / r.total_items * 100
               ELSE 0
             END
           ) AS avg_completion
-        FROM dbo.cnc_maintenance_records
-        GROUP BY machine_id, machine_name, machine_type
-        ORDER BY machine_name
+        FROM dbo.cnc_maintenance_records r
+        CROSS APPLY (
+          SELECT COUNT(*) AS completed_count FROM OPENJSON(r.completed_items)
+        ) j
+        GROUP BY r.machine_id, r.machine_name, r.machine_type
+        ORDER BY r.machine_name
       `);
 
       return { jsonBody: result.recordset };

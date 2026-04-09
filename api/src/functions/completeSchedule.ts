@@ -5,7 +5,7 @@ import sql from 'mssql';
 app.http('completeSchedule', {
   methods: ['PUT'],
   authLevel: 'anonymous',
-  route: 'schedule/{id}/complete',
+  route: 'schedule/{id:int}/complete',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);
