@@ -2,8 +2,8 @@ import { Configuration } from "@azure/msal-browser";
 
 export const msalConfig: Configuration = {
   auth: {
-    clientId: "YOUR_CLIENT_ID",
-    authority: "https://login.microsoftonline.com/YOUR_TENANT_ID",
+    clientId: "265c4fbe-eddb-46d2-a438-bcafa44e98aa",
+    authority: "https://login.microsoftonline.com/422e0e56-e8fe-4fc5-8554-b9b89f3cadac",
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin,
   },

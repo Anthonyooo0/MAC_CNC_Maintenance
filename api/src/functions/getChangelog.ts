@@ -9,7 +9,7 @@ app.http('getChangelog', {
     try {
       const pool = await getPool();
       const result = await pool.request().query(
-        'SELECT * FROM dbo.changelog ORDER BY created_at DESC'
+        'SELECT * FROM dbo.cnc_changelog ORDER BY created_at DESC'
       );
       return { jsonBody: result.recordset };
     } catch (err: any) {

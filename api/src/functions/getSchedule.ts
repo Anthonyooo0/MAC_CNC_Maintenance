@@ -10,7 +10,7 @@ app.http('getSchedule', {
       const filter = req.query.get('filter') || 'all';
       const pool = await getPool();
 
-      let query = 'SELECT * FROM dbo.maintenance_schedule';
+      let query = 'SELECT * FROM dbo.cnc_maintenance_schedule';
       const today = new Date().toISOString().split('T')[0];
 
       if (filter === 'overdue') {

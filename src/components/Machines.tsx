@@ -1,48 +1,100 @@
 import React, { useEffect, useState } from 'react';
-import { Icons, getAllMachines, MACHINE_TYPE_LABELS } from '../constants';
-import { Machine, MachineType } from '../types';
+import { Icons, MACHINE_TYPE_LABELS } from '../constants';
 import { api } from '../api';
+import { MachineEditor } from './MachineEditor';
+import { ToastMessage } from '../types';
 
-export const Machines: React.FC = () => {
+interface MachinesProps {
+  currentUser: string;
+  addToast: (msg: string, type: ToastMessage['type']) => void;
+}
+
+export const Machines: React.FC<MachinesProps> = ({ currentUser, addToast }) => {
+  const [machines, setMachines] = useState<any[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedMachine, setExpandedMachine] = useState<string | null>(null);
 
-  const allMachines = getAllMachines();
+  // Editor state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingMachine, setEditingMachine] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  async function loadStats() {
+  async function loadData() {
     setLoading(true);
     try {
-      const stats = await api.machines.stats();
+      const [machineList, stats] = await Promise.all([
+        api.machines.list(),
+        api.machines.stats().catch(() => []),
+      ]);
+      setMachines(machineList);
       const map: Record<string, any> = {};
-      stats.forEach((s: any) => {
-        map[s.machine_id] = s;
-      });
+      stats.forEach((s: any) => { map[s.machine_id] = s; });
       setStatsMap(map);
     } catch {
-      // Stats load failed — show machines without stats
+      addToast('Failed to load machines', 'error');
     } finally {
       setLoading(false);
     }
   }
 
-  const filteredMachines = allMachines.filter((m) => {
+  function openNewMachine() {
+    setEditingMachine(null);
+    setEditorOpen(true);
+  }
+
+  function openEditMachine(machine: any) {
+    setEditingMachine(machine);
+    setEditorOpen(true);
+  }
+
+  async function handleSave(data: any) {
+    setSaving(true);
+    try {
+      if (editingMachine) {
+        await api.machines.update(editingMachine.id, { ...data, userEmail: currentUser });
+        addToast(`${data.name} updated`, 'success');
+      } else {
+        await api.machines.create({ ...data, userEmail: currentUser });
+        addToast(`${data.name} added`, 'success');
+      }
+      setEditorOpen(false);
+      loadData();
+    } catch (err: any) {
+      addToast(`Failed to save: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      await api.machines.delete(id, currentUser);
+      addToast('Machine deleted', 'success');
+      setEditorOpen(false);
+      loadData();
+    } catch (err: any) {
+      addToast(`Failed to delete: ${err.message}`, 'error');
+    }
+  }
+
+  const filteredMachines = machines.filter((m) => {
     const matchesType = typeFilter === 'all' || m.type === typeFilter;
     const matchesSearch = !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
   });
 
-  function getStatusInfo(machine: Machine) {
+  function getStatusInfo(machine: any) {
     if (machine.status === 'down') {
       return { label: 'Machine Down', color: 'bg-red-50 text-red-600 border-red-200' };
     }
-    const stat = statsMap[machine.id];
+    const stat = statsMap[machine.machine_id];
     if (!stat || stat.record_count === 0) {
       return { label: 'No Records', color: 'bg-slate-50 text-slate-600 border-slate-200' };
     }
@@ -54,7 +106,7 @@ export const Machines: React.FC = () => {
 
   return (
     <div className="view-transition space-y-4">
-      {/* Filters */}
+      {/* Filters + Add button */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Icons.Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -76,6 +128,12 @@ export const Machines: React.FC = () => {
           <option value="cnc-mill">CNC Mills</option>
           <option value="manual-mill">Manual Mills</option>
         </select>
+        <button
+          onClick={openNewMachine}
+          className="px-4 py-2 bg-mac-navy hover:bg-mac-blue text-white font-bold rounded-lg text-sm transition-all shadow-sm"
+        >
+          + Add Machine
+        </button>
       </div>
 
       {/* Stats summary */}
@@ -116,48 +174,49 @@ export const Machines: React.FC = () => {
               </div>
             ))
           : filteredMachines.map((machine) => {
-              const stat = statsMap[machine.id];
-              const status = getStatusInfo(machine);
-              const isExpanded = expandedMachine === machine.id;
+              const stat = statsMap[machine.machine_id];
+              const statusInfo = getStatusInfo(machine);
+              const isExpanded = expandedMachine === machine.machine_id;
+              const weeklyCount = (machine.weekly_tasks || []).length;
+              const monthlyCount = (machine.monthly_tasks || []).length;
 
               return (
                 <div
                   key={machine.id}
-                  className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-all cursor-pointer hover:shadow-md ${
+                  className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-all hover:shadow-md ${
                     machine.status === 'down' ? 'border-red-200' : 'border-slate-200'
                   }`}
-                  onClick={() => setExpandedMachine(isExpanded ? null : machine.id)}
                 >
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="font-bold text-slate-800 text-sm">{machine.name}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${status.color}`}>
-                        {status.label}
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${statusInfo.color}`}>
+                        {statusInfo.label}
                       </span>
                     </div>
-
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Type</span>
-                        <span className="font-medium text-slate-700">{MACHINE_TYPE_LABELS[machine.type]}</span>
+                        <span className="font-medium text-slate-700">{MACHINE_TYPE_LABELS[machine.type] || machine.type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Weekly Tasks</span>
+                        <span className="font-mono text-slate-600">{weeklyCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Monthly Tasks</span>
+                        <span className="font-mono text-slate-600">{monthlyCount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Avg Completion</span>
                         <span className={`font-mono font-bold ${
-                          !stat || stat.record_count === 0
-                            ? 'text-slate-400'
-                            : stat.avg_completion >= 90
-                              ? 'text-green-600'
-                              : stat.avg_completion >= 70
-                                ? 'text-orange-600'
+                          !stat || stat.record_count === 0 ? 'text-slate-400'
+                            : stat.avg_completion >= 90 ? 'text-green-600'
+                              : stat.avg_completion >= 70 ? 'text-orange-600'
                                 : 'text-red-600'
                         }`}>
                           {stat ? `${Math.round(stat.avg_completion)}%` : '—'}
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Records</span>
-                        <span className="font-mono text-slate-600">{stat?.record_count ?? 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Last Maintenance</span>
@@ -170,41 +229,64 @@ export const Machines: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Expanded: show checklist summary */}
+                  {/* Action buttons */}
+                  <div className="border-t border-slate-100 px-5 py-3 bg-slate-50/50 flex justify-between items-center">
+                    <button
+                      onClick={() => setExpandedMachine(isExpanded ? null : machine.machine_id)}
+                      className="text-xs text-mac-accent hover:underline font-medium"
+                    >
+                      {isExpanded ? 'Hide Tasks' : 'View Tasks'}
+                    </button>
+                    <button
+                      onClick={() => openEditMachine(machine)}
+                      className="px-3 py-1.5 text-xs font-bold text-mac-accent hover:bg-blue-50 rounded-lg transition-all"
+                    >
+                      Edit
+                    </button>
+                  </div>
+
+                  {/* Expanded: show tasks */}
                   {isExpanded && (
                     <div className="border-t border-slate-100 p-5 bg-slate-50/50">
-                      {machine.weekly && (
+                      {weeklyCount > 0 && (
                         <div className="mb-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            Weekly Tasks ({machine.weekly.length})
+                            Weekly Tasks ({weeklyCount})
                           </p>
                           <ul className="text-xs text-slate-600 space-y-0.5">
-                            {machine.weekly.slice(0, 3).map((t, i) => (
+                            {machine.weekly_tasks.map((t: string, i: number) => (
                               <li key={i} className="truncate">- {t}</li>
                             ))}
-                            {machine.weekly.length > 3 && (
-                              <li className="text-mac-accent font-medium">
-                                +{machine.weekly.length - 3} more
-                              </li>
-                            )}
                           </ul>
                         </div>
                       )}
-                      {machine.monthly && (
+                      {monthlyCount > 0 && (
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            Monthly Tasks ({machine.monthly.length})
+                            Monthly Tasks ({monthlyCount})
                           </p>
                           <ul className="text-xs text-slate-600 space-y-0.5">
-                            {machine.monthly.slice(0, 3).map((t, i) => (
+                            {machine.monthly_tasks.map((t: string, i: number) => (
                               <li key={i} className="truncate">- {t}</li>
                             ))}
-                            {machine.monthly.length > 3 && (
-                              <li className="text-mac-accent font-medium">
-                                +{machine.monthly.length - 3} more
-                              </li>
-                            )}
                           </ul>
+                        </div>
+                      )}
+                      {(machine.video_weekly || machine.video_monthly) && (
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Videos</p>
+                          {machine.video_weekly && (
+                            <a href={machine.video_weekly} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-mac-accent hover:underline mb-1">
+                              <Icons.Play className="w-3 h-3" /> Weekly: {machine.video_weekly}
+                            </a>
+                          )}
+                          {machine.video_monthly && (
+                            <a href={machine.video_monthly} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-mac-accent hover:underline">
+                              <Icons.Play className="w-3 h-3" /> Monthly: {machine.video_monthly}
+                            </a>
+                          )}
                         </div>
                       )}
                     </div>
@@ -213,6 +295,16 @@ export const Machines: React.FC = () => {
               );
             })}
       </div>
+
+      {/* Machine Editor Modal */}
+      <MachineEditor
+        open={editorOpen}
+        machine={editingMachine}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onClose={() => setEditorOpen(false)}
+        saving={saving}
+      />
     </div>
   );
 };

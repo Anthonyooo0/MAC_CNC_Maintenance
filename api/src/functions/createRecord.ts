@@ -40,7 +40,7 @@ app.http('createRecord', {
         .input('total_items', sql.Int, total_items || 0)
         .input('notes', sql.NVarChar, notes || null)
         .query(`
-          INSERT INTO dbo.maintenance_records
+          INSERT INTO dbo.cnc_maintenance_records
             (machine_id, machine_name, machine_type, frequency, operator_email, completed_date, completed_items, total_items, notes)
           OUTPUT INSERTED.*
           VALUES
@@ -60,7 +60,7 @@ app.http('createRecord', {
         .input('action', sql.NVarChar, 'Checklist Completed')
         .input('changes', sql.NVarChar, `${completedCount}/${total_items} tasks completed`)
         .query(`
-          INSERT INTO dbo.changelog (timestamp, user_email, project_id, project_info, action, changes)
+          INSERT INTO dbo.cnc_changelog (timestamp, user_email, project_id, project_info, action, changes)
           VALUES (@timestamp, @user_email, @project_id, @project_info, @action, @changes)
         `);
 

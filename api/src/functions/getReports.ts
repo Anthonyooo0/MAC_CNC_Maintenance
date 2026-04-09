@@ -21,7 +21,7 @@ app.http('reportCompletion', {
         .query(`
           SELECT *,
             (SELECT COUNT(*) FROM OPENJSON(completed_items)) AS completed_count
-          FROM dbo.maintenance_records
+          FROM dbo.cnc_maintenance_records
           WHERE completed_date >= @startDate AND completed_date <= @endDate
           ORDER BY completed_date DESC
         `);
@@ -94,7 +94,7 @@ app.http('reportByMachine', {
               )
               ELSE 0
             END AS completion_rate
-          FROM dbo.maintenance_records
+          FROM dbo.cnc_maintenance_records
           WHERE completed_date >= @startDate AND completed_date <= @endDate
           GROUP BY machine_id, machine_name, machine_type
           ORDER BY completion_rate DESC
@@ -137,7 +137,7 @@ app.http('reportByOperator', {
               )
               ELSE 0
             END AS completion_rate
-          FROM dbo.maintenance_records
+          FROM dbo.cnc_maintenance_records
           WHERE completed_date >= @startDate AND completed_date <= @endDate
           GROUP BY operator_email
           ORDER BY completion_rate DESC
@@ -169,7 +169,7 @@ app.http('reportTimeline', {
         .query(`
           SELECT *,
             (SELECT COUNT(*) FROM OPENJSON(completed_items)) AS completed_count
-          FROM dbo.maintenance_records
+          FROM dbo.cnc_maintenance_records
           WHERE completed_date >= @startDate AND completed_date <= @endDate
           ORDER BY completed_date ASC
         `);

@@ -37,7 +37,7 @@ app.http('getRecords', {
       }
 
       const result = await request.query(
-        `SELECT * FROM dbo.maintenance_records ${whereClause} ORDER BY created_at DESC`
+        `SELECT * FROM dbo.cnc_maintenance_records ${whereClause} ORDER BY created_at DESC`
       );
 
       // Parse completed_items JSON string back to array

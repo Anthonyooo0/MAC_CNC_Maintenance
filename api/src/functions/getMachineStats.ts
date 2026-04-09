@@ -25,7 +25,7 @@ app.http('getMachineStats', {
               ELSE 0
             END
           ) AS avg_completion
-        FROM dbo.maintenance_records
+        FROM dbo.cnc_maintenance_records
         GROUP BY machine_id, machine_name, machine_type
         ORDER BY machine_name
       `);

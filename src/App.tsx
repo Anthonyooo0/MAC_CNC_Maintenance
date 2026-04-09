@@ -234,7 +234,7 @@ export const App: React.FC = () => {
           {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
           {currentPage === 'checklists' && <Checklists currentUser={currentUser} addToast={addToast} />}
           {currentPage === 'schedule' && <Schedule currentUser={currentUser} addToast={addToast} />}
-          {currentPage === 'machines' && <Machines />}
+          {currentPage === 'machines' && <Machines currentUser={currentUser} addToast={addToast} />}
           {currentPage === 'reports' && <Reports />}
           {currentPage === 'changelog' && <Changelog />}
         </div>

@@ -24,7 +24,7 @@ app.http('completeSchedule', {
         .input('completed_by', sql.NVarChar, userEmail)
         .input('completed_date', sql.Date, new Date().toISOString().split('T')[0])
         .query(`
-          UPDATE dbo.maintenance_schedule
+          UPDATE dbo.cnc_maintenance_schedule
           SET completed = 1, completed_by = @completed_by, completed_date = @completed_date
           OUTPUT INSERTED.*
           WHERE id = @id
@@ -46,7 +46,7 @@ app.http('completeSchedule', {
         .input('action', sql.NVarChar, 'Schedule Completed')
         .input('changes', sql.NVarChar, `Marked scheduled ${item.frequency} maintenance as complete`)
         .query(`
-          INSERT INTO dbo.changelog (timestamp, user_email, project_id, project_info, action, changes)
+          INSERT INTO dbo.cnc_changelog (timestamp, user_email, project_id, project_info, action, changes)
           VALUES (@timestamp, @user_email, @project_id, @project_info, @action, @changes)
         `);
 

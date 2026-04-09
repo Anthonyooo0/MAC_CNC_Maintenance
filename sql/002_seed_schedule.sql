@@ -48,10 +48,10 @@ INSERT INTO @manualMills VALUES
 DECLARE @i INT = 0;
 WHILE @i < 12
 BEGIN
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'weekly', DATEADD(WEEK, @i, @today) FROM @cncLathes;
 
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'weekly', DATEADD(WEEK, @i, @today) FROM @cncMills;
 
   SET @i = @i + 1;
@@ -61,20 +61,20 @@ END;
 SET @i = 0;
 WHILE @i < 6
 BEGIN
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'monthly', DATEADD(MONTH, @i, @today) FROM @cncLathes;
 
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'monthly', DATEADD(MONTH, @i, @today) FROM @manualLathes;
 
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'monthly', DATEADD(MONTH, @i, @today) FROM @cncMills;
 
-  INSERT INTO dbo.maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
+  INSERT INTO dbo.cnc_maintenance_schedule (machine_id, machine_name, frequency, scheduled_date)
   SELECT machine_id, machine_name, 'monthly', DATEADD(MONTH, @i, @today) FROM @manualMills;
 
   SET @i = @i + 1;
 END;
 
 -- Verify
-SELECT 'Schedule items created:', COUNT(*) FROM dbo.maintenance_schedule;
+SELECT 'Schedule items created:', COUNT(*) FROM dbo.cnc_maintenance_schedule;

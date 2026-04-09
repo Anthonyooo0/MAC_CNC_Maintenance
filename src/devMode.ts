@@ -92,6 +92,19 @@ export const mockApi = {
       }
       return mockSchedule;
     },
+    create: async (data: any) => {
+      const item = { id: mockScheduleIdCounter++, ...data, completed: false };
+      mockSchedule.push(item);
+      return item;
+    },
+    update: async (id: number, data: any) => {
+      const item = mockSchedule.find((s) => s.id === id);
+      if (item) {
+        if (data.scheduled_date) item.scheduled_date = data.scheduled_date;
+        if (data.frequency) item.frequency = data.frequency;
+      }
+      return item;
+    },
     complete: async (id: number, userEmail: string) => {
       const item = mockSchedule.find((s) => s.id === id);
       if (item) {
@@ -111,8 +124,33 @@ export const mockApi = {
       }
       return item;
     },
+    delete: async (id: number, _userEmail: string) => {
+      mockSchedule = mockSchedule.filter((s) => s.id !== id);
+    },
   },
   machines: {
+    list: async () => {
+      // Return machines from constants as mock DB data
+      const { getAllMachines } = await import('./constants');
+      return getAllMachines().map((m, i) => ({
+        id: i + 1,
+        machine_id: m.id,
+        name: m.name,
+        type: m.type,
+        status: m.status || 'active',
+        weekly_tasks: m.weekly || [],
+        monthly_tasks: m.monthly || [],
+        video_weekly: m.videos?.weekly || null,
+        video_monthly: m.videos?.monthly || null,
+      }));
+    },
+    get: async (id: number) => {
+      const list = await mockApi.machines.list();
+      return list.find((m: any) => m.id === id);
+    },
+    create: async (data: any) => ({ id: Date.now(), machine_id: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), ...data }),
+    update: async (_id: number, data: any) => data,
+    delete: async (_id: number, _userEmail: string) => {},
     stats: async () => {
       const groups: Record<string, any> = {};
       mockRecords.forEach((r) => {

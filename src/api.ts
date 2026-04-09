@@ -11,6 +11,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const error = await res.text();
     throw new Error(`API Error ${res.status}: ${error}`);
   }
+  if (res.status === 204) return undefined as any;
   return res.json();
 }
 
@@ -32,13 +33,27 @@ const realApi = {
       const qs = params?.filter ? `?filter=${params.filter}` : '';
       return apiFetch<any[]>(`/schedule${qs}`);
     },
+    create: (data: any) =>
+      apiFetch<any>('/schedule', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: any) =>
+      apiFetch<any>(`/schedule/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     complete: (id: number, userEmail: string) =>
       apiFetch<any>(`/schedule/${id}/complete`, {
         method: 'PUT',
         body: JSON.stringify({ userEmail }),
       }),
+    delete: (id: number, userEmail: string) =>
+      apiFetch<void>(`/schedule/${id}?userEmail=${encodeURIComponent(userEmail)}`, { method: 'DELETE' }),
   },
   machines: {
+    list: () => apiFetch<any[]>('/machines'),
+    get: (id: number) => apiFetch<any>(`/machines/${id}`),
+    create: (data: any) =>
+      apiFetch<any>('/machines', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: any) =>
+      apiFetch<any>(`/machines/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: number, userEmail: string) =>
+      apiFetch<void>(`/machines/${id}?userEmail=${encodeURIComponent(userEmail)}`, { method: 'DELETE' }),
     stats: () => apiFetch<any[]>('/machines/stats'),
   },
   reports: {
