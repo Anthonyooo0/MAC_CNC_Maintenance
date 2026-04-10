@@ -283,7 +283,8 @@ export const MachineEditor: React.FC<MachineEditorProps> = ({
                 onClick={handleSubmit}
                 disabled={saving}
                 title={!name.trim() ? 'Enter a machine name' : ''}
-                className="px-6 py-2.5 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: saving ? '#94a3b8' : '#3182ce', color: '#ffffff' }}
+                className="px-6 py-2.5 text-sm font-bold rounded-lg shadow-md transition-all disabled:cursor-not-allowed hover:brightness-110"
               >
                 {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Machine'}
               </button>

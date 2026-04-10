@@ -185,7 +185,8 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
         <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
           <button onClick={() => saveChecklist(machine, frequency, items)}
             disabled={saving}
-            className="px-4 py-2 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            style={{ backgroundColor: saving ? '#94a3b8' : '#3182ce', color: '#ffffff' }}
+            className="px-4 py-2 text-sm font-bold rounded-lg shadow-md transition-all disabled:cursor-not-allowed hover:brightness-110">
             {saving ? 'Saving...' : `Save ${frequency} Checklist`}
           </button>
         </div>
@@ -258,7 +259,8 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
             <button
               onClick={saveAllChecked}
               disabled={saving}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ backgroundColor: saving ? '#94a3b8' : '#3182ce', color: '#ffffff' }}
+              className="px-6 py-2.5 text-sm font-bold rounded-lg shadow-md transition-all disabled:cursor-not-allowed whitespace-nowrap hover:brightness-110"
             >
               {saving ? 'Saving...' : `Save Checklist (${Object.values(checkedItems).filter(Boolean).length})`}
             </button>
