@@ -83,7 +83,10 @@ export const MachineEditor: React.FC<MachineEditorProps> = ({
   }
 
   function handleSubmit() {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      alert('Please enter a machine name before saving.');
+      return;
+    }
     onSave({
       name: name.trim(),
       type,
@@ -278,8 +281,9 @@ export const MachineEditor: React.FC<MachineEditorProps> = ({
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={saving || !name.trim()}
-                className="px-4 py-2 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={saving}
+                title={!name.trim() ? 'Enter a machine name' : ''}
+                className="px-6 py-2.5 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Machine'}
               </button>

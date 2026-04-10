@@ -56,6 +56,11 @@ export const Machines: React.FC<MachinesProps> = ({ currentUser, addToast }) => 
 
   async function handleSave(data: any) {
     setSaving(true);
+    // Safety timeout so the Save button never gets stuck disabled
+    const timeoutId = setTimeout(() => {
+      setSaving(false);
+      addToast('Save is taking longer than expected — check your connection', 'warning');
+    }, 20000);
     try {
       if (editingMachine) {
         await api.machines.update(editingMachine.id, { ...data, userEmail: currentUser });
@@ -69,6 +74,7 @@ export const Machines: React.FC<MachinesProps> = ({ currentUser, addToast }) => 
     } catch (err: any) {
       addToast(`Failed to save: ${err.message}`, 'error');
     } finally {
+      clearTimeout(timeoutId);
       setSaving(false);
     }
   }

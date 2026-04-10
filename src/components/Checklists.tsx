@@ -81,6 +81,12 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
     }
 
     setSaving(true);
+    // Safety timeout: never leave the button disabled for more than 20s
+    const timeoutId = setTimeout(() => {
+      setSaving(false);
+      addToast('Save is taking longer than expected — check your connection', 'warning');
+    }, 20000);
+
     try {
       await api.records.create({
         machine_id: machine.machine_id,
@@ -93,16 +99,31 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
         total_items: items.length,
         notes,
       });
-      addToast(`${frequency} checklist saved for ${machine.name}`, 'success');
+      addToast(`Saved ${completedIndices.length}/${items.length} ${frequency} tasks for ${machine.name} on ${completedDate}`, 'success');
       const newChecked = { ...checkedItems };
       items.forEach((_, idx) => {
         delete newChecked[`${machine.machine_id}-${frequency}-${idx}`];
       });
       setCheckedItems(newChecked);
+      setNotes('');
     } catch (err: any) {
       addToast(`Failed to save: ${err.message}`, 'error');
     } finally {
+      clearTimeout(timeoutId);
       setSaving(false);
+    }
+  }
+
+  async function saveAllChecked() {
+    if (!selectedMachine) return;
+    const weekly = selectedMachine.weekly_tasks || [];
+    const monthly = selectedMachine.monthly_tasks || [];
+    const weeklyCount = weekly.filter((_: any, i: number) => checkedItems[`${selectedMachine.machine_id}-weekly-${i}`]).length;
+    const monthlyCount = monthly.filter((_: any, i: number) => checkedItems[`${selectedMachine.machine_id}-monthly-${i}`]).length;
+    if (weeklyCount > 0) await saveChecklist(selectedMachine, 'weekly', weekly);
+    if (monthlyCount > 0) await saveChecklist(selectedMachine, 'monthly', monthly);
+    if (weeklyCount === 0 && monthlyCount === 0) {
+      addToast('Check at least one item before saving', 'warning');
     }
   }
 
@@ -218,20 +239,29 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
         )}
       </div>
 
-      {/* Date & Notes */}
+      {/* Date, Notes & Save */}
       {selectedMachine && (
-        <div className="flex items-start gap-4 flex-wrap">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Completion Date</label>
-            <input type="date" value={completedDate} onChange={(e) => setCompletedDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes (optional)</label>
-            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any additional notes about this maintenance..."
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+        <div className="sticky top-0 z-10 bg-mac-light pt-1 pb-3 -mt-1">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-end gap-4 flex-wrap">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Completion Date</label>
+              <input type="date" value={completedDate} onChange={(e) => setCompletedDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes (optional)</label>
+              <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any additional notes about this maintenance..."
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-mac-accent focus:ring-2 focus:ring-mac-accent/20 outline-none" />
+            </div>
+            <button
+              onClick={saveAllChecked}
+              disabled={saving}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-mac-accent hover:bg-mac-blue rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {saving ? 'Saving...' : `Save Checklist (${Object.values(checkedItems).filter(Boolean).length})`}
+            </button>
           </div>
         </div>
       )}
