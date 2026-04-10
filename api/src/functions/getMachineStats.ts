@@ -4,7 +4,7 @@ import { getPool } from '../db';
 app.http('getMachineStats', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'machines/stats',
+  route: 'stats/machines',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const pool = await getPool();

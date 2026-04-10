@@ -29,7 +29,7 @@ app.http('listMachines', {
 app.http('getMachine', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'machines/{id:int}',
+  route: 'machines/{id}',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);
@@ -121,7 +121,7 @@ app.http('createMachine', {
 app.http('updateMachine', {
   methods: ['PUT'],
   authLevel: 'anonymous',
-  route: 'machines/{id:int}',
+  route: 'machines/{id}',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);
@@ -199,7 +199,7 @@ app.http('updateMachine', {
 app.http('deleteMachine', {
   methods: ['DELETE'],
   authLevel: 'anonymous',
-  route: 'machines/{id:int}',
+  route: 'machines/{id}',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
     try {
       const id = Number(req.params.id);

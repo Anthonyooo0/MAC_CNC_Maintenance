@@ -54,7 +54,7 @@ const realApi = {
       apiFetch<any>(`/machines/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number, userEmail: string) =>
       apiFetch<void>(`/machines/${id}?userEmail=${encodeURIComponent(userEmail)}`, { method: 'DELETE' }),
-    stats: () => apiFetch<any[]>('/machines/stats'),
+    stats: () => apiFetch<any[]>('/stats/machines'),
   },
   reports: {
     completion: (startDate: string, endDate: string) =>
