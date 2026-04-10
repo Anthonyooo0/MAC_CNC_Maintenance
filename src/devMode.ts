@@ -59,6 +59,14 @@ let mockSchedule = generateMockSchedule();
 export const mockApi = {
   records: {
     list: async (_params?: any) => mockRecords,
+    update: async (id: number, data: any) => {
+      const idx = mockRecords.findIndex((r) => r.id === id);
+      if (idx >= 0) {
+        mockRecords[idx] = { ...mockRecords[idx], ...data };
+        return mockRecords[idx];
+      }
+      return null;
+    },
     create: async (data: any) => {
       const record = { id: Date.now(), ...data, created_at: new Date().toISOString() };
       mockRecords.unshift(record);

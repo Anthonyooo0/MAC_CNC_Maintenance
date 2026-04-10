@@ -27,6 +27,8 @@ const realApi = {
     },
     create: (data: any) =>
       apiFetch<any>('/records', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: any) =>
+      apiFetch<any>(`/records/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
   schedule: {
     list: (params?: { filter?: string }) => {

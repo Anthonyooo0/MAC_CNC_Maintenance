@@ -5,7 +5,11 @@ import { EmptyState } from './EmptyState';
 
 type Tab = 'activity' | 'maintenance';
 
-export const Changelog: React.FC = () => {
+interface ChangelogProps {
+  onResume?: (record: any) => void;
+}
+
+export const Changelog: React.FC<ChangelogProps> = ({ onResume }) => {
   const [tab, setTab] = useState<Tab>('activity');
   const [entries, setEntries] = useState<any[]>([]);
   const [records, setRecords] = useState<any[]>([]);
@@ -333,6 +337,15 @@ export const Changelog: React.FC = () => {
                               <span className="text-xs font-mono text-slate-500 whitespace-nowrap">
                                 {completedCount}/{r.total_items} ({pct}%)
                               </span>
+                              {pct < 100 && onResume && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); onResume(r); }}
+                                  style={{ backgroundColor: '#3182ce', color: '#ffffff' }}
+                                  className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase hover:brightness-110 transition-all"
+                                >
+                                  Resume
+                                </button>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-xs text-slate-500 italic max-w-xs truncate">

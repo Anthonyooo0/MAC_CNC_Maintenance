@@ -43,6 +43,7 @@ export const App: React.FC = () => {
 
   const [currentUser, setCurrentUser] = useState<string | null>(IS_DEV_MODE ? DEV_USER : null);
   const [currentPage, setCurrentPage] = useState<ViewPage>('dashboard');
+  const [resumeRecord, setResumeRecord] = useState<any | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
   });
@@ -231,12 +232,34 @@ export const App: React.FC = () => {
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
-          {currentPage === 'checklists' && <Checklists currentUser={currentUser} addToast={addToast} />}
+          {currentPage === 'dashboard' && (
+            <Dashboard
+              onNavigate={setCurrentPage}
+              onResume={(record) => {
+                setResumeRecord(record);
+                setCurrentPage('checklists');
+              }}
+            />
+          )}
+          {currentPage === 'checklists' && (
+            <Checklists
+              currentUser={currentUser}
+              addToast={addToast}
+              resumeRecord={resumeRecord}
+              onResumeConsumed={() => setResumeRecord(null)}
+            />
+          )}
           {currentPage === 'schedule' && <Schedule currentUser={currentUser} addToast={addToast} />}
           {currentPage === 'machines' && <Machines currentUser={currentUser} addToast={addToast} />}
           {currentPage === 'reports' && <Reports />}
-          {currentPage === 'changelog' && <Changelog />}
+          {currentPage === 'changelog' && (
+            <Changelog
+              onResume={(record) => {
+                setResumeRecord(record);
+                setCurrentPage('checklists');
+              }}
+            />
+          )}
         </div>
       </main>
 

@@ -5,6 +5,7 @@ import { ViewPage } from '../types';
 
 interface DashboardProps {
   onNavigate: (page: ViewPage) => void;
+  onResume?: (record: any) => void;
 }
 
 interface Stats {
@@ -17,7 +18,7 @@ interface Stats {
   machinesDown: number;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onResume }) => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentRecords, setRecentRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,8 +250,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <tbody className="divide-y divide-slate-100">
               {recentRecords.map((r: any) => {
                 const pct = r.total_items > 0 ? Math.round(((Array.isArray(r.completed_items) ? r.completed_items.length : 0) / r.total_items) * 100) : 0;
+                const isIncomplete = pct < 100;
                 return (
-                  <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={r.id}
+                    onClick={() => isIncomplete && onResume?.(r)}
+                    className={`transition-colors ${isIncomplete ? 'cursor-pointer hover:bg-blue-50/50' : 'hover:bg-slate-50/50'}`}
+                    title={isIncomplete ? 'Click to resume this checklist' : ''}
+                  >
                     <td className="px-4 py-3 text-xs text-slate-500 font-mono">
                       {new Date(r.completed_date).toLocaleDateString()}
                     </td>
@@ -272,6 +279,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                           />
                         </div>
                         <span className="text-xs font-mono text-slate-500">{pct}%</span>
+                        {isIncomplete && (
+                          <span
+                            style={{ backgroundColor: '#3182ce', color: '#ffffff' }}
+                            className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                          >
+                            Resume
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

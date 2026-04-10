@@ -8,9 +8,11 @@ import { ConfirmDialog } from './ConfirmDialog';
 interface ChecklistsProps {
   currentUser: string;
   addToast: (msg: string, type: ToastMessage['type']) => void;
+  resumeRecord?: any | null;
+  onResumeConsumed?: () => void;
 }
 
-export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast }) => {
+export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast, resumeRecord, onResumeConsumed }) => {
   const [machines, setMachines] = useState<any[]>([]);
   const [loadingMachines, setLoadingMachines] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -21,10 +23,31 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
   const [completedDate, setCompletedDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [resumingId, setResumingId] = useState<number | null>(null);
+  const [resumingFrequency, setResumingFrequency] = useState<Frequency | null>(null);
 
   useEffect(() => {
     loadMachines();
   }, []);
+
+  // Apply a resume request once machines are loaded
+  useEffect(() => {
+    if (!resumeRecord || machines.length === 0) return;
+    setSelectedMachineId(resumeRecord.machine_id);
+    setFreqFilter(resumeRecord.frequency);
+    setCompletedDate(resumeRecord.completed_date?.slice(0, 10) || new Date().toISOString().split('T')[0]);
+    setNotes(resumeRecord.notes || '');
+    setResumingId(resumeRecord.id);
+    setResumingFrequency(resumeRecord.frequency);
+    const completedSet: number[] = Array.isArray(resumeRecord.completed_items) ? resumeRecord.completed_items : [];
+    const next: Record<string, boolean> = {};
+    completedSet.forEach((idx) => {
+      next[`${resumeRecord.machine_id}-${resumeRecord.frequency}-${idx}`] = true;
+    });
+    setCheckedItems(next);
+    addToast(`Resuming ${resumeRecord.frequency} checklist for ${resumeRecord.machine_name}`, 'success');
+    onResumeConsumed?.();
+  }, [resumeRecord, machines]);
 
   async function loadMachines() {
     setLoadingMachines(true);
@@ -55,6 +78,8 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
     setSelectedMachineId(machineId);
     setCheckedItems({});
     setNotes('');
+    setResumingId(null);
+    setResumingFrequency(null);
   }
 
   function toggleItem(key: string) {
@@ -64,6 +89,8 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
   function clearAll() {
     setCheckedItems({});
     setNotes('');
+    setResumingId(null);
+    setResumingFrequency(null);
     setShowClearConfirm(false);
   }
 
@@ -88,18 +115,31 @@ export const Checklists: React.FC<ChecklistsProps> = ({ currentUser, addToast })
     }, 20000);
 
     try {
-      await api.records.create({
-        machine_id: machine.machine_id,
-        machine_name: machine.name,
-        machine_type: machine.type,
-        frequency,
-        operator_email: currentUser,
-        completed_date: completedDate,
-        completed_items: completedIndices,
-        total_items: items.length,
-        notes,
-      });
-      addToast(`Saved ${completedIndices.length}/${items.length} ${frequency} tasks for ${machine.name} on ${completedDate}`, 'success');
+      const isResume = resumingId !== null && resumingFrequency === frequency;
+      if (isResume) {
+        await api.records.update(resumingId!, {
+          completed_items: completedIndices,
+          completed_date: completedDate,
+          notes,
+          operator_email: currentUser,
+        });
+        addToast(`Resumed ${completedIndices.length}/${items.length} ${frequency} tasks for ${machine.name}`, 'success');
+        setResumingId(null);
+        setResumingFrequency(null);
+      } else {
+        await api.records.create({
+          machine_id: machine.machine_id,
+          machine_name: machine.name,
+          machine_type: machine.type,
+          frequency,
+          operator_email: currentUser,
+          completed_date: completedDate,
+          completed_items: completedIndices,
+          total_items: items.length,
+          notes,
+        });
+        addToast(`Saved ${completedIndices.length}/${items.length} ${frequency} tasks for ${machine.name} on ${completedDate}`, 'success');
+      }
       const newChecked = { ...checkedItems };
       items.forEach((_, idx) => {
         delete newChecked[`${machine.machine_id}-${frequency}-${idx}`];
